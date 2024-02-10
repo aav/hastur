@@ -1,0 +1,6 @@
+[workspace]
+members = ["hastur", "hastur_macro"]
+
+[patch.crates-io]
+async-metronome = { path = '../async_metronome' }
+async-metronome-attributes = { path = '../async_metronome_attributes' }

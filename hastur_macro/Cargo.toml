@@ -1,0 +1,13 @@
+[package]
+name = "hastur_macro"
+version = "0.1.0"
+authors = ["Alexey Aristov <aav@suprematic.de>"]
+edition = "2018"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "1.0", features = ["full", "extra-traits"] }
