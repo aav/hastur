@@ -26,10 +26,6 @@ pub struct Envelope {
 unsafe impl Send for Envelope {}
 unsafe impl Sync for Envelope {}
 
-trait NewEnvelope<M> {
-    fn _new(message: M) -> Self;
-}
-
 impl Envelope {
     pub fn new<M: Sized + Send + 'static>(message: M) -> Self {
         Self {
