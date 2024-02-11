@@ -2,8 +2,6 @@
 #[cfg(test)]
 mod process_tests {
     use async_metronome::{self, assert_tick, await_tick};
-    use async_std::future::timeout;
-    use async_std::task;
     use futures::channel::oneshot;
     use futures::sink::SinkExt;
     use std::time::Duration;

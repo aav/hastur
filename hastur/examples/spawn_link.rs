@@ -1,6 +1,6 @@
 use hastur::*;
 
-#[async_std::main]
+#[tokio::main]
 async fn main() {
     std::panic::set_hook(Box::new(|_| {}));
 

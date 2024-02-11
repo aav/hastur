@@ -1,6 +1,6 @@
 use futures::{
     channel::oneshot,
-    future::{poll_fn, BoxFuture, FutureExt},
+    future::{poll_fn, FutureExt},
     select_biased, Future,
 };
 
@@ -11,6 +11,8 @@ use crate::kernel::{self, ExitReason};
 use crate::pid::{myself, MonitorRef, Pid, PID};
 
 use derive_builder::Builder;
+
+use tokio::task;
 
 #[derive(Default, Builder, Debug)]
 pub struct SpawnOpt {
@@ -86,7 +88,7 @@ fn spawn_int<F>(
     future: F,
     link_to: Option<Pid>,
     monitor: Option<(MonitorRef, Pid)>,
-) -> (Pid, BoxFuture<'static, ExitReason>)
+) -> (Pid, impl Future<Output = ExitReason>)
 where
     F: Future + Send + 'static,
 {
@@ -191,10 +193,14 @@ where
        }
     }
 
-    if async_metronome::is_context() {
-        (pid, async_metronome::spawn(task).boxed())
-    } else {
-        use async_std::task;
-        (pid, task::spawn(task).boxed())
-    }
+    (
+        pid,
+        if async_metronome::is_context() {
+            async_metronome::spawn(task).boxed()
+        } else {
+            task::spawn(task)
+                .map(|x| x.unwrap_or(ExitReason::JoinError))
+                .boxed()
+        },
+    )
 }

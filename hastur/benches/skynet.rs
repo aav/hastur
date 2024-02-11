@@ -1,8 +1,14 @@
-use async_std::task::block_on;
 use criterion::Criterion;
-use futures::future::{BoxFuture, FutureExt};
+use futures::{
+    future::{BoxFuture, FutureExt},
+    Future,
+};
 use hastur::*;
 use std::time::Duration;
+
+use tokio::runtime::Builder;
+
+use criterion::{criterion_group, criterion_main};
 
 fn skynet_process(parent: Pid, num: usize, size: usize, div: usize) -> BoxFuture<'static, ()> {
     async move {
@@ -13,7 +19,7 @@ fn skynet_process(parent: Pid, num: usize, size: usize, div: usize) -> BoxFuture
             let myself = myself();
 
             for n in 0..div {
-                spawn_link(skynet_process(myself, num + n * new_size, new_size, div));
+                spawn(skynet_process(myself, num + n * new_size, new_size, div));
             }
 
             let mut sum = 0usize;
@@ -32,13 +38,13 @@ fn skynet_process(parent: Pid, num: usize, size: usize, div: usize) -> BoxFuture
     .boxed()
 }
 
-async fn skynet() {
+fn skynet_start() -> impl Future<Output = ExitReason> {
     let size = 1000000usize;
     let div = 10usize;
 
     let (_, _, handle) = __spawn_opt(
         async move {
-            spawn_link(skynet_process(myself(), 0, size, div));
+            spawn(skynet_process(myself(), 0, size, div));
 
             let control = receive! {
                 c: usize => {
@@ -51,15 +57,27 @@ async fn skynet() {
         SpawnOpt::default(),
     );
 
-    handle.await;
+    handle
 }
 
-fn main() {
-    let mut criterion = Criterion::default()
-        .sample_size(10)
-        .measurement_time(Duration::from_secs(10))
-        .configure_from_args();
+fn skynet(c: &mut Criterion) {
+    c.bench_function("skynet 1m", |bencher| {
+        bencher
+            .to_async(Builder::new_multi_thread().build().unwrap())
+            .iter(skynet_start);
+    });
 
-    criterion.bench_function("skynet 1m", |bencher| bencher.iter(|| block_on(skynet())));
-    criterion.final_summary();
+    c.final_summary();
 }
+
+criterion_group! {
+    name = benches;
+    config =
+        Criterion::default()
+            .sample_size(10)
+            .measurement_time(Duration::from_secs(10))
+            .configure_from_args();
+    targets = skynet
+}
+
+criterion_main!(benches);

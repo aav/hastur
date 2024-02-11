@@ -17,6 +17,7 @@ pub enum ExitReason {
     NoProc(Pid),
     Panic,
     Kill,
+    JoinError,
 }
 
 pub struct Kernel {
