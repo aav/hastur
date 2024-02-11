@@ -10,7 +10,6 @@ hastur_macro = { path = "../hastur_macro" }
 futures = { version = "0.3" }
 async-std = { version = "1.12", features = ["attributes"] }
 crossbeam = "0.8"
-dynamic = "0.2"
 atomic_refcell = "0.1"
 dashmap = "5.5"
 lazy_static = "1.4"

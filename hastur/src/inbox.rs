@@ -1,6 +1,5 @@
 use atomic_refcell::AtomicRefCell;
 
-use dynamic::Dynamic;
 use futures::{
     future::{poll_fn, Future},
     task::{AtomicWaker, Poll},
@@ -21,7 +20,7 @@ pub struct Exit(pub Pid, pub ExitReason);
 
 pub struct Envelope {
     size: usize,
-    message: Box<Dynamic>,
+    message: Box<dyn Any>,
 }
 
 unsafe impl Send for Envelope {}
@@ -35,12 +34,12 @@ impl Envelope {
     pub fn new<M: Sized + Send + 'static>(message: M) -> Self {
         Self {
             size: std::mem::size_of::<M>(),
-            message: Dynamic::new(message),
+            message: Box::new(message),
         }
     }
 
     pub fn downcast<T: Any>(self) -> Option<T> {
-        self.message.downcast::<T>().ok().map(|x| x.data)
+        self.message.downcast::<T>().ok().map(|x| *x)
     }
 
     pub fn downcast_ref<T: Any>(&self) -> Option<&T> {
@@ -48,7 +47,7 @@ impl Envelope {
     }
 
     pub fn id(&self) -> TypeId {
-        self.message.id()
+        self.message.type_id()
     }
 
     pub fn is<T: Any>(&self) -> bool {
